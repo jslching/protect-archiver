@@ -24,6 +24,7 @@ class ProtectClient:
         ignore_failed_downloads: bool = Config.IGNORE_FAILED_DOWNLOADS,
         download_wait: int = Config.DOWNLOAD_WAIT,
         use_subfolders: bool = Config.USE_SUBFOLDERS,
+        verify: bool = Config.VERIFY,
         skip_existing_files: bool = Config.SKIP_EXISTING_FILES,
         destination_path: str = Config.DESTINATION_PATH,
         touch_files: bool = Config.TOUCH_FILES,
@@ -43,6 +44,7 @@ class ProtectClient:
         self.download_wait = download_wait
         self.download_timeout = download_timeout
         self.use_subfolders = use_subfolders
+        self.verify = verify
         self.skip_existing_files = skip_existing_files
         self.touch_files = touch_files
         self.use_utc_filenames = use_utc_filenames

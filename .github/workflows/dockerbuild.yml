@@ -6,7 +6,7 @@ on:
     tags: [ 'v*.*.*' ]
 
   workflow_dispatch:
-  
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false
@@ -43,7 +43,7 @@ jobs:
           tags: |
             type=edge
             type=semver,pattern={{version}}
-          
+
       - name: Build and push
         id: docker_build
         uses: docker/build-push-action@v5

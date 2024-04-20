@@ -32,6 +32,7 @@ def download_file(client: Any, query: str, filename: str) -> None:
         # make the GET request to retrieve the video file or snapshot
         try:
             start = time.monotonic()
+
             response = (
                 requests.get(
                     uri,
@@ -49,7 +50,6 @@ def download_file(client: Any, query: str, filename: str) -> None:
                     stream=True,
                 )
             )
-
             if response.status_code == 401:
                 # invalid current api token - we special case this
                 # as we dont want to retry on consecutive auth failures
@@ -79,11 +79,9 @@ def download_file(client: Any, query: str, filename: str) -> None:
             # otherwise log error and then either exit or skip the download
             if response.status_code != 200:
                 try:
-                    data = json.loads(response.content)
+                    error_message = json.loads(response.content).get("error")
                 except Exception:
-                    data = None
-
-                error_message = data.get("error") or data or "(no information available)"
+                    error_message = "(no information available)"
 
                 # TODO
                 logging.exception(
@@ -110,10 +108,14 @@ def download_file(client: Any, query: str, filename: str) -> None:
                         fp.write(content)
 
                 else:
-                    # skip download if remote file is smaller than 300b
-                    if total_bytes < 300:
-                        logging.warning(
-                            "File is smaller than 300 bytes (empty video clip) - skipping download"
+                    # when verifying, skip download if remote file is smaller than existing file
+                    if (
+                        client.verify
+                        and os.path.exists(filename)
+                        and (total_bytes <= os.path.getsize(filename))
+                    ):
+                        logging.info(
+                            f"File {filename} already exists on disk - skipping download \n"
                         )
                         client.files_skipped += 1
                         return

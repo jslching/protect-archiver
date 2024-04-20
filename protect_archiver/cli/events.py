@@ -95,6 +95,15 @@ from protect_archiver.utils import print_download_stats
     show_envvar=True,
 )
 @click.option(
+    "--verify",
+    is_flag=True,
+    default=False,
+    show_default=True,
+    help="Verify files which already exist on disk",
+    envvar="PROTECT_VERIFY",
+    show_envvar=True,
+)
+@click.option(
     "--skip-existing-files",
     is_flag=True,
     default=False,
@@ -126,7 +135,7 @@ from protect_archiver.utils import print_download_stats
 @click.option(
     "--download-request-timeout",
     "download_timeout",
-    default=60.0,
+    default=300.0,
     show_default=True,
     help="Time to wait before aborting download request, in seconds",
     envvar="PROTECT_DOWNLOAD_TIMEOUT",
@@ -142,11 +151,10 @@ from protect_archiver.utils import print_download_stats
             "%Y-%m-%d %H:%M:%S%z",
         ]
     ),
-    required=True,
+    required=False,
     help=(
         "Download range start time. "
-        # TODO(danielfernau): uncomment the next line as soon as the feature is implemented
-        # "If omitted, the time of the first available recording for each camera will be used."
+        "If omitted, the time of the first available recording for each camera will be used."
     ),
     envvar="PROTECT_START_TIME",
     show_envvar=True,
@@ -161,11 +169,10 @@ from protect_archiver.utils import print_download_stats
             "%Y-%m-%d %H:%M:%S%z",
         ]
     ),
-    required=True,
+    required=False,
     help=(
         "Download range end time. "
-        # TODO(danielfernau): uncomment the next line as soon as the feature is implemented
-        # "If omitted, the time of the last available recording for each camera will be used."
+        "If omitted, the time of the last available recording for each camera will be used."
     ),
     envvar="PROTECT_END_TIME",
     show_envvar=True,
@@ -200,6 +207,7 @@ def events(
     download_wait: int,
     download_timeout: int,
     use_subfolders: bool,
+    verify: bool,
     touch_files: bool,
     skip_existing_files: bool,
     ignore_failed_downloads: bool,
@@ -219,6 +227,7 @@ def events(
         destination_path=dest,
         use_subfolders=use_subfolders,
         download_wait=download_wait,
+        verify=verify,
         skip_existing_files=skip_existing_files,
         touch_files=touch_files,
         download_timeout=download_timeout,
@@ -229,6 +238,11 @@ def events(
         # get camera list
         click.echo("Getting camera list")
         camera_list = client.get_camera_list()
+
+        if start is None:
+            start = datetime.strptime("2000-01-01T00:00:00", "%Y-%m-%dT%H:%M:%S")
+        if end is None:
+            end = datetime.now().replace(minute=0, second=0, microsecond=0)
 
         # get motion event list
         click.echo("Getting motion event list")

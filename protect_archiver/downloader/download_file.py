@@ -36,6 +36,7 @@ def download_file(client: Any, query: str, filename: str) -> None:
         # make the GET request to retrieve the video file or snapshot
         try:
             start = time.monotonic()
+            file_written = False
 
             response = (
                 requests.get(
@@ -93,6 +94,7 @@ def download_file(client: Any, query: str, filename: str) -> None:
                 cur_bytes = 0
                 if not total_bytes:
                     with open(filename, "wb") as fp:
+                        file_written = True
                         content = response.content
                         cur_bytes = len(content)
                         total_bytes = cur_bytes
@@ -109,6 +111,7 @@ def download_file(client: Any, query: str, filename: str) -> None:
                         return  # skip the download
 
                     with open(filename, "wb") as fp:
+                        file_written = True
                         for chunk in response.iter_content(None):
                             cur_bytes += len(chunk)
                             fp.write(chunk)
@@ -128,13 +131,13 @@ def download_file(client: Any, query: str, filename: str) -> None:
 
         except requests.exceptions.RequestException as request_exception:
             # clean up
-            if os.path.exists(filename):
+            if file_written:
                 os.remove(filename)
             logging.exception(f"Download failed: {request_exception}")
             exit_code = 5
         except Errors.DownloadFailed:
             # clean up
-            if os.path.exists(filename):
+            if file_written:
                 os.remove(filename)
             logging.exception(
                 f"Download failed with status {response.status_code} {response.reason}"

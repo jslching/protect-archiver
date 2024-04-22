@@ -1,3 +1,4 @@
+import gzip
 import json
 
 from datetime import datetime
@@ -91,8 +92,8 @@ class ProtectClient:
         self.verify = verify
         self.verify_interval = verify_interval
         self.verified_file = path.join(destination_path, ".verified")
-        if path.isfile(self.verified_file):
-            with open(self.verified_file) as f:
+        if path.isfile(self.verified_file) and path.exists(self.verified_file):
+            with gzip.open(self.verified_file, "rt", encoding="UTF-8") as f:
                 self.verified = json.load(f)
         else:
             self.verified = {}
@@ -110,7 +111,7 @@ class ProtectClient:
 
     def set_verified(self, filename: str) -> None:
         self.verified[filename] = datetime.now(timezone.utc).timestamp()
-        with open(self.verified_file, "w") as f:
+        with gzip.open(self.verified_file, "wt", encoding="UTF-8") as f:
             json.dump(self.verified, f)
 
     def check_verified(self, filename: str) -> bool:

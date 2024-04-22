@@ -7,10 +7,10 @@ class Errors:
         def __init__(self, code: int) -> None:
             self.code = code
 
-    @Exception
     class DownloadFailed(Exception):
-        pass
+        def __init__(self, message: str) -> None:
+            super().__init__(message)
 
-    @Exception
     class AuthorizationFailed(Exception):
-        pass
+        def __init__(self, message: str) -> None:
+            super().__init__(message)

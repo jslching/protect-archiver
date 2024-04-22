@@ -104,6 +104,14 @@ from protect_archiver.utils import print_download_stats
     show_envvar=True,
 )
 @click.option(
+    "--verify-interval",
+    default=60 * 60 * 24 * 7,
+    show_default=True,
+    help="Time to wait before re-verifying files, in seconds",
+    envvar="PROTECT_VERIFY_INTERVAL",
+    show_envvar=True,
+)
+@click.option(
     "--skip-existing-files",
     is_flag=True,
     default=False,
@@ -239,6 +247,7 @@ def download(
     download_timeout: int,
     use_subfolders: bool,
     verify: bool,
+    verify_interval: int,
     touch_files: bool,
     skip_existing_files: bool,
     ignore_failed_downloads: bool,
@@ -271,6 +280,7 @@ def download(
         use_subfolders=use_subfolders,
         download_wait=download_wait,
         verify=verify,
+        verify_interval=verify_interval,
         skip_existing_files=skip_existing_files,
         touch_files=touch_files,
         download_timeout=download_timeout,

@@ -19,6 +19,7 @@ class Downloader:
         verify_ssl: bool = Config.VERIFY_SSL,
         max_retries: int = Config.MAX_RETRIES,
         verify: bool = Config.VERIFY,
+        verify_interval: int = Config.VERIFY_INTERVAL,
         skip_existing_files: bool = Config.SKIP_EXISTING_FILES,
         download_wait: int = Config.DOWNLOAD_WAIT,
     ) -> None:
@@ -27,6 +28,7 @@ class Downloader:
         self.verify_ssl = verify_ssl
         self.max_retries = max_retries
         self.verify = verify
+        self.verify_interval = verify_interval
         self.skip_existing_files = skip_existing_files
         self.download_wait = download_wait
 

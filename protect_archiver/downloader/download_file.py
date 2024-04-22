@@ -27,6 +27,10 @@ def download_file(client: Any, query: str, filename: str) -> None:
         )
         client.files_skipped += 1
         return  # skip the download
+    elif client.check_verified(filename):
+        logging.info(f"File {filename} already verified on disk - skipping download \n")
+        client.files_skipped += 1
+        return  # skip the download
 
     for retry_num in range(client.max_retries):
         # make the GET request to retrieve the video file or snapshot
@@ -82,20 +86,7 @@ def download_file(client: Any, query: str, filename: str) -> None:
                     error_message = json.loads(response.content).get("error")
                 except Exception:
                     error_message = "(no information available)"
-
-                # TODO
-                logging.exception(
-                    f"Download failed with status {response.status_code} {response.reason}:\n"
-                    f"{error_message}"
-                )
-                client.files_failed += 1
-                # if response.status_code == 401:
-                #     cls = Errors.AuthorizationFailed
-                # else:
-                #     cls = Errors.DownloadFailed
-                # raise cls(
-                #     f"Download failed with status {response.status_code} {response.reason}:\n{error_message}"
-                # )
+                raise Errors.DownloadFailed(error_message)
 
             else:
                 total_bytes = int(response.headers.get("content-length") or 0)
@@ -109,16 +100,13 @@ def download_file(client: Any, query: str, filename: str) -> None:
 
                 else:
                     # when verifying, skip download if remote file is smaller than existing file
-                    if (
-                        client.verify
-                        and os.path.exists(filename)
-                        and (total_bytes <= os.path.getsize(filename))
-                    ):
-                        logging.info(
-                            f"File {filename} already exists on disk - skipping download \n"
-                        )
+                    filesize = os.path.getsize(filename) if os.path.exists(filename) else -1
+                    if client.verify and (total_bytes <= filesize):
+                        logging.info(f"File {filename} verified on disk - skipping download \n")
+                        if total_bytes == filesize:
+                            client.set_verified(filename)
                         client.files_skipped += 1
-                        return
+                        return  # skip the download
 
                     with open(filename, "wb") as fp:
                         for chunk in response.iter_content(None):
@@ -169,4 +157,4 @@ def download_file(client: Any, query: str, filename: str) -> None:
         logging.info(
             "Argument '--ignore-failed-downloads' is present, continue downloading files..."
         )
-        client.files_skipped += 1
+        client.files_failed += 1

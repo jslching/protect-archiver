@@ -1,4 +1,7 @@
+import json
+
 from datetime import datetime
+from datetime import timezone
 from os import path
 from typing import Any
 from typing import List
@@ -25,6 +28,7 @@ class ProtectClient:
         download_wait: int = Config.DOWNLOAD_WAIT,
         use_subfolders: bool = Config.USE_SUBFOLDERS,
         verify: bool = Config.VERIFY,
+        verify_interval: int = Config.VERIFY_INTERVAL,
         skip_existing_files: bool = Config.SKIP_EXISTING_FILES,
         destination_path: str = Config.DESTINATION_PATH,
         touch_files: bool = Config.TOUCH_FILES,
@@ -44,7 +48,6 @@ class ProtectClient:
         self.download_wait = download_wait
         self.download_timeout = download_timeout
         self.use_subfolders = use_subfolders
-        self.verify = verify
         self.skip_existing_files = skip_existing_files
         self.touch_files = touch_files
         self.use_utc_filenames = use_utc_filenames
@@ -85,6 +88,15 @@ class ProtectClient:
                 self.verify_ssl,
             )
 
+        self.verify = verify
+        self.verify_interval = verify_interval
+        self.verified_file = path.join(destination_path, ".verified")
+        if path.isfile(self.verified_file):
+            with open(self.verified_file) as f:
+                self.verified = json.load(f)
+        else:
+            self.verified = {}
+
     def get_camera_list(self) -> List[Any]:
         return Downloader.get_camera_list(self.session)
 
@@ -95,6 +107,19 @@ class ProtectClient:
 
     def get_session(self) -> Any:
         return self.session
+
+    def set_verified(self, filename: str) -> None:
+        self.verified[filename] = datetime.now(timezone.utc).timestamp()
+        with open(self.verified_file, "w") as f:
+            json.dump(self.verified, f)
+
+    def check_verified(self, filename: str) -> bool:
+        if filename in self.verified:
+            if (self.verified[filename] + self.verify_interval) > datetime.now(
+                timezone.utc
+            ).timestamp():
+                return True
+        return False
 
 
 # TODO

@@ -22,7 +22,7 @@ def get_motion_event_list(
         # TODO: The query parameters documented below are mostly still correct but need to be checked.
         # TODO: Param "withoutDescriptions=true" should be present to avoid unnecessary data in the response.
         f"{session.authority}{session.base_path}/events?"
-        "types=motion&type=smartDetectZone&types=smartDetectLine&types=smartAudioDetect&types=ring&"
+        "types=motion&types=smartDetectZone&types=smartDetectLine&types=smartAudioDetect&types=ring&"
         "types=doorAccess&smartDetectType=licensePlate&withoutDescriptions=true"
         f"&start={int(start.timestamp()) * 1000}&end={int(end.timestamp()) * 1000}"
     )

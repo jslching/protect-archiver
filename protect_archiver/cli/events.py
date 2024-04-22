@@ -105,7 +105,7 @@ from protect_archiver.utils import print_download_stats
 )
 @click.option(
     "--verify-interval",
-    default=60 * 60 * 24 * 7,
+    default=60 * 60 * 24 * 15,
     show_default=True,
     help="Time to wait before re-verifying files, in seconds",
     envvar="PROTECT_VERIFY_INTERVAL",

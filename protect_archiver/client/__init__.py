@@ -1,5 +1,6 @@
 import gzip
 import json
+import os
 
 from datetime import datetime
 from datetime import timezone
@@ -111,8 +112,10 @@ class ProtectClient:
 
     def set_verified(self, filename: str) -> None:
         self.verified[filename] = datetime.now(timezone.utc).timestamp()
-        with gzip.open(self.verified_file, "wt", encoding="UTF-8") as f:
+        verified_tmp = self.verified_file + ".tmp"
+        with gzip.open(verified_tmp, "wt", encoding="UTF-8") as f:
             json.dump(self.verified, f)
+        os.rename(verified_tmp, self.verified_file)
 
     def check_verified(self, filename: str) -> bool:
         if filename in self.verified:

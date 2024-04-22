@@ -15,7 +15,7 @@ class Config:
     DESTINATION_PATH: str = "./"
     USE_SUBFOLDERS: bool = False
     VERIFY: bool = False
-    VERIFY_INTERVAL: int = 60 * 60 * 24 * 7
+    VERIFY_INTERVAL: int = 60 * 60 * 24 * 15
     TOUCH_FILES: bool = False
     SKIP_EXISTING_FILES: bool = False
     IGNORE_FAILED_DOWNLOADS: bool = False

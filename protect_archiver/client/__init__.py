@@ -110,12 +110,20 @@ class ProtectClient:
     def get_session(self) -> Any:
         return self.session
 
-    def set_verified(self, filename: str) -> None:
-        self.verified[filename] = datetime.now(timezone.utc).timestamp()
+    def set_verified(
+        self, filename: str, value: float = datetime.now(timezone.utc).timestamp()
+    ) -> bool:
+        # value == 0 indicates that the file does not exist on server
+        # if value == 0 a first time, set file as "not exist" by recording time zero
+        # if value == 0 a second time, set file as "verified" by recording the current time
+        if value == 0.0 and filename in self.verified and self.verified[filename] == 0.0:
+            value = datetime.now(timezone.utc).timestamp()
+        self.verified[filename] = value
         verified_tmp = self.verified_file + ".tmp"
         with gzip.open(verified_tmp, "wt", encoding="UTF-8") as f:
             json.dump(self.verified, f)
         os.rename(verified_tmp, self.verified_file)
+        return value != 0.0
 
     def check_verified(self, filename: str) -> bool:
         if filename in self.verified:

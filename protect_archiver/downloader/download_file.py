@@ -13,6 +13,7 @@ from protect_archiver.utils import format_bytes
 from protect_archiver.utils import print_download_stats
 
 
+# flake8: noqa: C901
 def download_file(client: Any, query: str, filename: str) -> None:
     exit_code = 1
     retry_delay = max(client.download_wait, 3)
@@ -87,6 +88,13 @@ def download_file(client: Any, query: str, filename: str) -> None:
                     error_message = json.loads(response.content).get("error")
                 except Exception:
                     error_message = "(no information available)"
+                if "No files found matching criteria." in error_message:
+                    if client.set_verified(filename, 0):
+                        logging.info(f"File {filename} verified on disk - skipping download \n")
+                    else:
+                        logging.info(f"File {filename} not exist on server - skipping download \n")
+                    client.files_skipped += 1
+                    return  # skip the download
                 raise Errors.DownloadFailed(error_message)
 
             else:
@@ -104,9 +112,11 @@ def download_file(client: Any, query: str, filename: str) -> None:
                     # when verifying, skip download if remote file is smaller than existing file
                     filesize = os.path.getsize(filename) if os.path.exists(filename) else -1
                     if client.verify and (total_bytes <= filesize):
-                        logging.info(f"File {filename} verified on disk - skipping download \n")
                         if total_bytes == filesize:
                             client.set_verified(filename)
+                            logging.info(f"File {filename} verified on disk - skipping download \n")
+                        else:
+                            logging.info(f"File {filename} larger on disk - skipping download \n")
                         client.files_skipped += 1
                         return  # skip the download
 

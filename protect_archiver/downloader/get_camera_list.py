@@ -36,10 +36,19 @@ def get_camera_list(session: Any) -> List[Camera]:
 
     camera_list = []
     for camera in cameras:
-        camera_data = Camera(id=camera["id"], name=camera["name"], recording_start=datetime.min)
+        camera_data = Camera(
+            id=camera["id"],
+            name=camera["name"],
+            recording_start=datetime.min,
+            recording_end=datetime.now().replace(minute=0, second=0, microsecond=0),
+        )
         if camera["stats"]["video"]["recordingStart"]:
             camera_data.recording_start = datetime.utcfromtimestamp(
                 camera["stats"]["video"]["recordingStart"] / 1000
+            )
+        if camera["stats"]["video"]["recordingEnd"]:
+            camera_data.recording_end = datetime.utcfromtimestamp(
+                camera["stats"]["video"]["recordingEnd"] / 1000
             )
         camera_list.append(camera_data)
 

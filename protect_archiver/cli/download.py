@@ -1,4 +1,5 @@
 from datetime import datetime
+from datetime import timedelta
 
 import click
 
@@ -303,7 +304,9 @@ def download(
                 if start is None:
                     start = camera.recording_start.replace(minute=0, second=0, microsecond=0)
                 if end is None:
-                    end = datetime.now().replace(minute=0, second=0, microsecond=0)
+                    end = camera.recording_end
+                    if end.minute != 0 or end.second != 0 or end.microsecond != 0:
+                        end = end.replace(minute=0, second=0, microsecond=0) + timedelta(days=1)
 
                 click.echo(
                     f"Downloading video files between {start} and {end} from"

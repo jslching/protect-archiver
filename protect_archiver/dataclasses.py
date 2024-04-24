@@ -11,6 +11,7 @@ class Camera:
     id: str
     name: str
     recording_start: datetime
+    recording_end: datetime
 
 
 @dataclass

@@ -301,21 +301,29 @@ def download(
         if not create_snapshot:
             for camera in camera_list:
                 # noinspection PyUnboundLocalVariable
-                if start is None:
-                    start = camera.recording_start.replace(minute=0, second=0, microsecond=0)
-                if end is None:
-                    end = camera.recording_end
-                    if end.minute != 0 or end.second != 0 or end.microsecond != 0:
-                        end = end.replace(minute=0, second=0, microsecond=0) + timedelta(days=1)
+                camera_start = start
+                if camera_start is None:
+                    camera_start = camera.recording_start.replace(minute=0, second=0, microsecond=0)
+                camera_end = end
+                if camera_end is None:
+                    camera_end = camera.recording_end
+                    if (
+                        camera_end.minute != 0
+                        or camera_end.second != 0
+                        or camera_end.microsecond != 0
+                    ):
+                        camera_end = camera_end.replace(
+                            minute=0, second=0, microsecond=0
+                        ) + timedelta(hours=1)
 
                 click.echo(
-                    f"Downloading video files between {start} and {end} from"
+                    f"Downloading video files between {camera_start} and {camera_end} from"
                     f" '{session.authority}{session.base_path}/video/export' for camera"
                     f" {camera.name}"
                 )
 
                 Downloader.download_footage(
-                    client, start, end, camera, disable_alignment, disable_splitting
+                    client, camera_start, camera_end, camera, disable_alignment, disable_splitting
                 )
         else:
             click.echo(

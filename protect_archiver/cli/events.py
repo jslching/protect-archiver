@@ -1,3 +1,5 @@
+import time
+
 from datetime import datetime
 
 import click
@@ -203,6 +205,23 @@ from protect_archiver.utils import print_download_stats
     envvar="PROTECT_USE_UTC",
     show_envvar=True,
 )
+@click.option(
+    "--repeat",
+    is_flag=True,
+    default=False,
+    show_default=True,
+    help="Repeat downloading files",
+    envvar="PROTECT_REPEAT",
+    show_envvar=True,
+)
+@click.option(
+    "--repeat-interval",
+    default=60 * 60 * 6,
+    show_default=True,
+    help="Time to wait before repeating downloading files, in seconds",
+    envvar="PROTECT_REPEAT_INTERVAL",
+    show_envvar=True,
+)
 def events(
     dest: str,
     address: str,
@@ -216,7 +235,7 @@ def events(
     download_timeout: int,
     use_subfolders: bool,
     verify: bool,
-    verify_interval: bool,
+    verify_interval: int,
     touch_files: bool,
     skip_existing_files: bool,
     ignore_failed_downloads: bool,
@@ -224,6 +243,8 @@ def events(
     end: datetime,
     download_motion_heatmaps: bool,
     use_utc_filenames: bool,
+    repeat: bool,
+    repeat_interval: int,
 ) -> None:
     client = ProtectClient(
         address=address,
@@ -245,48 +266,58 @@ def events(
     )
 
     try:
-        # get camera list
-        click.echo("Getting camera list")
-        camera_list = client.get_camera_list()
+        while True:
+            # get camera list
+            click.echo("Getting camera list")
+            camera_list = client.get_camera_list()
 
-        if start is None:
-            start = datetime.strptime("2000-01-01T00:00:00", "%Y-%m-%dT%H:%M:%S")
-        if end is None:
-            end = datetime.now().replace(minute=0, second=0, microsecond=0)
+            if start is None:
+                start = datetime.strptime("2000-01-01T00:00:00", "%Y-%m-%dT%H:%M:%S")
+            if end is None:
+                end = datetime.now().replace(minute=0, second=0, microsecond=0)
 
-        # get motion event list
-        click.echo("Getting motion event list")
-        motion_event_list = client.get_motion_event_list(start, end, camera_list)
+            # get motion event list
+            click.echo("Getting motion event list")
+            motion_event_list = client.get_motion_event_list(start, end, camera_list)
 
-        if cameras != "all":
-            camera_s = set(cameras.split(","))
-            # keep only selected cameras in list
-            camera_list = [camera for camera in camera_list if camera["id"] in camera_s]
-            # keep only events for selected cameras
-            motion_event_list = [event for event in motion_event_list if event.camera_id in cameras]
+            if cameras != "all":
+                camera_s = set(cameras.split(","))
+                # keep only selected cameras in list
+                camera_list = [camera for camera in camera_list if camera["id"] in camera_s]
+                # keep only events for selected cameras
+                motion_event_list = [
+                    event for event in motion_event_list if event.camera_id in cameras
+                ]
 
-        click.echo(
-            f"Downloading motion event video files between {start} and {end}"
-            f" from '{client.session.authority}{client.session.base_path}/video/export'"
-        )
-
-        for motion_event in motion_event_list:
-            # client.download_event(MotionEvent, Camera, bool)
-            if not ([camera for camera in camera_list if camera["id"] == motion_event.camera_id]):
-                click.echo(
-                    f"Unable to download event {motion_event.id[-4:]} at {motion_event.start}:"
-                    " camera is not available"
-                )
-                continue
-
-            Downloader.download_motion_event(
-                client,
-                motion_event,
-                [camera for camera in camera_list if camera["id"] == motion_event.camera_id][0],
-                download_motion_heatmaps,
+            click.echo(
+                f"Downloading motion event video files between {start} and {end}"
+                f" from '{client.session.authority}{client.session.base_path}/video/export'"
             )
 
-        print_download_stats(client)
+            for motion_event in motion_event_list:
+                # client.download_event(MotionEvent, Camera, bool)
+                if not (
+                    [camera for camera in camera_list if camera["id"] == motion_event.camera_id]
+                ):
+                    click.echo(
+                        f"Unable to download event {motion_event.id[-4:]} at {motion_event.start}:"
+                        " camera is not available"
+                    )
+                    continue
+
+                Downloader.download_motion_event(
+                    client,
+                    motion_event,
+                    [camera for camera in camera_list if camera["id"] == motion_event.camera_id][0],
+                    download_motion_heatmaps,
+                )
+
+            print_download_stats(client)
+
+            if repeat:
+                time.sleep(repeat_interval)
+            else:
+                break
 
     except Errors.ProtectError as e:
         exit(e.code)

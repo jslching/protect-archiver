@@ -1,3 +1,5 @@
+import time
+
 from datetime import datetime
 from datetime import timedelta
 
@@ -235,6 +237,23 @@ from protect_archiver.utils import print_download_stats
     envvar="PROTECT_USE_UTC",
     show_envvar=True,
 )
+@click.option(
+    "--repeat",
+    is_flag=True,
+    default=False,
+    show_default=True,
+    help="Repeat downloading files",
+    envvar="PROTECT_REPEAT",
+    show_envvar=True,
+)
+@click.option(
+    "--repeat-interval",
+    default=60 * 60 * 6,
+    show_default=True,
+    help="Time to wait before repeating downloading files, in seconds",
+    envvar="PROTECT_REPEAT_INTERVAL",
+    show_envvar=True,
+)
 def download(
     dest: str,
     address: str,
@@ -258,6 +277,8 @@ def download(
     disable_splitting: bool,
     create_snapshot: bool,
     use_utc_filenames: bool,
+    repeat: bool,
+    repeat_interval: int,
 ) -> None:
     # check the provided command line arguments
     # TODO(danielfernau): remove exit codes 1 (path invalid) and 6 (start/end/snapshot) from docs: no longer valid
@@ -289,51 +310,64 @@ def download(
     )
 
     try:
-        # get camera list
-        click.echo("Getting camera list")
-        camera_list = client.get_camera_list()
-        session = client.get_session()
+        while True:
+            # get camera list
+            click.echo("Getting camera list")
+            camera_list = client.get_camera_list()
+            session = client.get_session()
 
-        if cameras != "all":
-            camera_s = set(cameras.split(","))
-            camera_list = [c for c in camera_list if c["id"] in camera_s]
+            if cameras != "all":
+                camera_s = set(cameras.split(","))
+                camera_list = [c for c in camera_list if c["id"] in camera_s]
 
-        if not create_snapshot:
-            for camera in camera_list:
-                # noinspection PyUnboundLocalVariable
-                camera_start = start
-                if camera_start is None:
-                    camera_start = camera.recording_start.replace(minute=0, second=0, microsecond=0)
-                camera_end = end
-                if camera_end is None:
-                    camera_end = camera.recording_end
-                    if (
-                        camera_end.minute != 0
-                        or camera_end.second != 0
-                        or camera_end.microsecond != 0
-                    ):
-                        camera_end = camera_end.replace(
+            if not create_snapshot:
+                for camera in camera_list:
+                    # noinspection PyUnboundLocalVariable
+                    camera_start = start
+                    if camera_start is None:
+                        camera_start = camera.recording_start.replace(
                             minute=0, second=0, microsecond=0
-                        ) + timedelta(hours=1)
+                        )
+                    camera_end = end
+                    if camera_end is None:
+                        camera_end = camera.recording_end
+                        if (
+                            camera_end.minute != 0
+                            or camera_end.second != 0
+                            or camera_end.microsecond != 0
+                        ):
+                            camera_end = camera_end.replace(
+                                minute=0, second=0, microsecond=0
+                            ) + timedelta(hours=1)
 
+                    click.echo(
+                        f"Downloading video files between {camera_start} and {camera_end} from"
+                        f" '{session.authority}{session.base_path}/video/export' for camera"
+                        f" {camera.name}"
+                    )
+
+                    Downloader.download_footage(
+                        client,
+                        camera_start,
+                        camera_end,
+                        camera,
+                        disable_alignment,
+                        disable_splitting,
+                    )
+            else:
                 click.echo(
-                    f"Downloading video files between {camera_start} and {camera_end} from"
-                    f" '{session.authority}{session.base_path}/video/export' for camera"
-                    f" {camera.name}"
+                    f"Downloading snapshot files for {start.ctime()}"
+                    f" from '{session.authority}{session.base_path}/cameras/[camera_id]/snapshot'"
                 )
+                for camera in camera_list:
+                    Downloader.download_snapshot(client, start, camera)
 
-                Downloader.download_footage(
-                    client, camera_start, camera_end, camera, disable_alignment, disable_splitting
-                )
-        else:
-            click.echo(
-                f"Downloading snapshot files for {start.ctime()}"
-                f" from '{session.authority}{session.base_path}/cameras/[camera_id]/snapshot'"
-            )
-            for camera in camera_list:
-                Downloader.download_snapshot(client, start, camera)
+            print_download_stats(client)
 
-        print_download_stats(client)
+            if repeat:
+                time.sleep(repeat_interval)
+            else:
+                break
 
     except Errors.ProtectError as e:
         exit(e.code)

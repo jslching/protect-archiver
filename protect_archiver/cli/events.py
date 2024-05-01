@@ -246,27 +246,28 @@ def events(
     repeat: bool,
     repeat_interval: int,
 ) -> None:
-    client = ProtectClient(
-        address=address,
-        port=port,
-        not_unifi_os=not_unifi_os,
-        username=username,
-        password=password,
-        verify_ssl=verify_ssl,
-        ignore_failed_downloads=ignore_failed_downloads,
-        destination_path=dest,
-        use_subfolders=use_subfolders,
-        download_wait=download_wait,
-        verify=verify,
-        verify_interval=verify_interval,
-        skip_existing_files=skip_existing_files,
-        touch_files=touch_files,
-        download_timeout=download_timeout,
-        use_utc_filenames=use_utc_filenames,
-    )
 
     try:
         while True:
+            client = ProtectClient(
+                address=address,
+                port=port,
+                not_unifi_os=not_unifi_os,
+                username=username,
+                password=password,
+                verify_ssl=verify_ssl,
+                ignore_failed_downloads=ignore_failed_downloads,
+                destination_path=dest,
+                use_subfolders=use_subfolders,
+                download_wait=download_wait,
+                verify=verify,
+                verify_interval=verify_interval,
+                skip_existing_files=skip_existing_files,
+                touch_files=touch_files,
+                download_timeout=download_timeout,
+                use_utc_filenames=use_utc_filenames,
+            )
+
             # get camera list
             click.echo("Getting camera list")
             camera_list = client.get_camera_list()

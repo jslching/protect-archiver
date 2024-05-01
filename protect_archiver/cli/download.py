@@ -283,34 +283,33 @@ def download(
     # check the provided command line arguments
     # TODO(danielfernau): remove exit codes 1 (path invalid) and 6 (start/end/snapshot) from docs: no longer valid
 
-    if create_snapshot:
-        if start or end:
-            click.echo(
-                "The arguments --start and --end are ignored when using the --snapshot option"
-            )
-        start = datetime.now()
-
-    client = ProtectClient(
-        address=address,
-        port=port,
-        not_unifi_os=not_unifi_os,
-        username=username,
-        password=password,
-        verify_ssl=verify_ssl,
-        ignore_failed_downloads=ignore_failed_downloads,
-        destination_path=dest,
-        use_subfolders=use_subfolders,
-        download_wait=download_wait,
-        verify=verify,
-        verify_interval=verify_interval,
-        skip_existing_files=skip_existing_files,
-        touch_files=touch_files,
-        download_timeout=download_timeout,
-        use_utc_filenames=use_utc_filenames,
-    )
+    if create_snapshot and (start or end):
+        click.echo("The arguments --start and --end are ignored when using the --snapshot option")
 
     try:
         while True:
+            if create_snapshot:
+                start = datetime.now()
+
+            client = ProtectClient(
+                address=address,
+                port=port,
+                not_unifi_os=not_unifi_os,
+                username=username,
+                password=password,
+                verify_ssl=verify_ssl,
+                ignore_failed_downloads=ignore_failed_downloads,
+                destination_path=dest,
+                use_subfolders=use_subfolders,
+                download_wait=download_wait,
+                verify=verify,
+                verify_interval=verify_interval,
+                skip_existing_files=skip_existing_files,
+                touch_files=touch_files,
+                download_timeout=download_timeout,
+                use_utc_filenames=use_utc_filenames,
+            )
+
             # get camera list
             click.echo("Getting camera list")
             camera_list = client.get_camera_list()

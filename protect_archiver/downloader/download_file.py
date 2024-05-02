@@ -24,12 +24,12 @@ def download_file(client: Any, query: str, filename: str) -> None:
     if bool(client.skip_existing_files) and os.path.exists(filename):
         logging.info(
             f"File {filename} already exists on disk and argument '--skip-existing-files' "
-            "is present - skipping download \n"
+            "is present - skipping download"
         )
         client.files_skipped += 1
         return  # skip the download
     elif client.check_verified(filename):
-        logging.info(f"File {filename} already verified on disk - skipping download \n")
+        logging.info(f"File {filename} already verified on disk - skipping download")
         client.files_skipped += 1
         return  # skip the download
 
@@ -90,9 +90,9 @@ def download_file(client: Any, query: str, filename: str) -> None:
                     error_message = "(no information available)"
                 if "No files found matching criteria." in error_message:
                     if client.set_verified(filename, 0):
-                        logging.info(f"File {filename} verified on disk - skipping download \n")
+                        logging.info(f"File {filename} verified on disk - skipping download")
                     else:
-                        logging.info(f"File {filename} not exist on server - skipping download \n")
+                        logging.info(f"File {filename} not exist on server - skipping download")
                     client.files_skipped += 1
                     return  # skip the download
                 raise Errors.DownloadFailed(error_message)
@@ -114,9 +114,9 @@ def download_file(client: Any, query: str, filename: str) -> None:
                     if client.verify and (total_bytes <= filesize):
                         if total_bytes == filesize:
                             client.set_verified(filename)
-                            logging.info(f"File {filename} verified on disk - skipping download \n")
+                            logging.info(f"File {filename} verified on disk - skipping download")
                         else:
-                            logging.info(f"File {filename} larger on disk - skipping download \n")
+                            logging.info(f"File {filename} larger on disk - skipping download")
                         client.files_skipped += 1
                         return  # skip the download
 

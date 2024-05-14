@@ -272,14 +272,16 @@ def events(
             click.echo("Getting camera list")
             camera_list = client.get_camera_list()
 
-            if start is None:
-                start = datetime.strptime("2000-01-01T00:00:00", "%Y-%m-%dT%H:%M:%S")
-            if end is None:
-                end = datetime.now().replace(minute=0, second=0, microsecond=0)
+            list_start = start
+            if list_start is None:
+                list_start = datetime.strptime("2000-01-01T00:00:00", "%Y-%m-%dT%H:%M:%S")
+            list_end = end
+            if list_end is None:
+                list_end = datetime.now().replace(minute=0, second=0, microsecond=0)
 
             # get motion event list
             click.echo("Getting motion event list")
-            motion_event_list = client.get_motion_event_list(start, end, camera_list)
+            motion_event_list = client.get_motion_event_list(list_start, list_end, camera_list)
 
             if cameras != "all":
                 camera_s = set(cameras.split(","))
@@ -291,7 +293,7 @@ def events(
                 ]
 
             click.echo(
-                f"Downloading motion event video files between {start} and {end}"
+                f"Downloading motion event video files between {list_start} and {list_end}"
                 f" from '{client.session.authority}{client.session.base_path}/video/export'"
             )
 
